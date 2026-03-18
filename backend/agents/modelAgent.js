@@ -1,15 +1,6 @@
 function modelAgent(grid, currentPos, goalPos, memory) {
-  // Logic:
-  // - Memory stores visited cells: { visited: {"x,y": true} }
-  // - On each step, mark currentPos as visited in memory
-  // - From walkable neighbors, prefer cells NOT yet visited
-  // - If all neighbors are visited, pick any walkable neighbor (backtrack)
-  // - Does NOT plan ahead, does NOT know goal location explicitly
-  // - Returns nextPos, updatedMemory with updated visited map,
-  //   exploredCells: all visited cells so far
-
   const directions = [
-    { x: 0, y: -1 }, 
+    { x: 0, y: -1 },
     { x: 0, y: 1 },
     { x: -1, y: 0 },
     { x: 1, y: 0 }
@@ -18,21 +9,33 @@ function modelAgent(grid, currentPos, goalPos, memory) {
   const cols = grid[0].length;
   const rows = grid.length;
 
-  // Initialize memory
+  // Initialize memory structure
   let mem = memory || {};
-  if (!mem.visited) {
-    mem.visited = {};
-  }
+  if (!mem.visited) mem.visited = {};
+  if (!mem.path) mem.path = [];
 
-  // Mark current as visited
+  // Mark current position as visited
   const currentKey = `${currentPos.x},${currentPos.y}`;
   mem.visited[currentKey] = true;
+
+  // Append current position to the running path history
+  // Only append if it's a new position (avoid duplicates on first call)
+  const lastInPath = mem.path[mem.path.length - 1];
+  if (!lastInPath || lastInPath.x !== currentPos.x || lastInPath.y !== currentPos.y) {
+    mem.path.push({ x: currentPos.x, y: currentPos.y });
+  }
 
   const getWalkableNeighbors = (x, y) => {
     return directions
       .map(d => ({ x: x + d.x, y: y + d.y }))
-      .filter(pos => pos.x >= 0 && pos.x < cols && pos.y >= 0 && pos.y < rows && grid[pos.y][pos.x] !== 1);
+      .filter(pos =>
+        pos.x >= 0 && pos.x < cols &&
+        pos.y >= 0 && pos.y < rows &&
+        grid[pos.y][pos.x] !== 1
+      );
   };
+
+  const manhattan = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
 
   const walkable = getWalkableNeighbors(currentPos.x, currentPos.y);
 
@@ -40,25 +43,32 @@ function modelAgent(grid, currentPos, goalPos, memory) {
     return {
       nextPos: currentPos,
       updatedMemory: mem,
-      exploredCells: Object.keys(mem.visited).map(k => { const [x,y] = k.split(','); return {x: +x, y: +y}; }),
-      pathSoFar: []
+      exploredCells: Object.keys(mem.visited).map(k => {
+        const [x, y] = k.split(',');
+        return { x: +x, y: +y };
+      }),
+      pathSoFar: mem.path
     };
   }
 
   const unvisited = walkable.filter(pos => !mem.visited[`${pos.x},${pos.y}`]);
-  
+
   let chosenPos;
   if (unvisited.length > 0) {
-    // Pick random unvisited
-    chosenPos = unvisited[Math.floor(Math.random() * unvisited.length)];
+    // Prefer unvisited cells — explore the world greedily
+    // Among unvisited, pick the one closest to the goal
+    // This is the "model" in action: using known goal location to guide exploration
+    unvisited.sort((a, b) => manhattan(a, goalPos) - manhattan(b, goalPos));
+    chosenPos = unvisited[0];
   } else {
-    // All visited, pick random walkable (backtrack)
-    chosenPos = walkable[Math.floor(Math.random() * walkable.length)];
+    // All neighbors visited — use model knowledge to backtrack toward goal
+    // This is smarter than random: the agent uses its internal world model
+    walkable.sort((a, b) => manhattan(a, goalPos) - manhattan(b, goalPos));
+    chosenPos = walkable[0];
   }
 
   const nextPos = { x: chosenPos.x, y: chosenPos.y };
-  
-  // Format explored for return
+
   const exploredCells = Object.keys(mem.visited).map(k => {
     const [x, y] = k.split(',');
     return { x: parseInt(x, 10), y: parseInt(y, 10) };
@@ -68,7 +78,7 @@ function modelAgent(grid, currentPos, goalPos, memory) {
     nextPos,
     updatedMemory: mem,
     exploredCells,
-    pathSoFar: [currentPos, nextPos]
+    pathSoFar: mem.path   // Return FULL path history, not just last 2 nodes
   };
 }
 

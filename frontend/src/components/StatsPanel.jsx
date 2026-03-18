@@ -1,64 +1,71 @@
 import React from 'react'
 
-export default function StatsPanel({ 
-  steps, exploredCount, coinsCollected, totalScore, memorySize, agentType, goalReached 
+export default function StatsPanel({
+  steps, exploredCount, coinsCollected,
+  totalScore, memorySize, agentType, goalReached
 }) {
+  const badgeClass = {
+    reflex:  'badge-reflex',
+    model:   'badge-model',
+    goal:    'badge-goal',
+    utility: 'badge-utility'
+  }
+
+  const agentLabel = {
+    reflex:  'Simple Reflex',
+    model:   'Model-Based',
+    goal:    'Goal-Based',
+    utility: 'Utility-Based'
+  }
+
   return (
-    <div className="panel stats-panel">
-      <h2>Simulation Stats</h2>
-      
-      {goalReached && (
-        <div className="goal-banner">
-          Goal Reached! 🎉
-        </div>
-      )}
+    <div className="stats-panel">
+      <h3>Stats</h3>
 
-      <div className="stats-item">
-        <span>Agent Type:</span>
-        <span className={`agent-badge ${agentType}`}>
-          {agentType}
-        </span>
+      <span className={`agent-badge ${badgeClass[agentType]}`}>
+        {agentLabel[agentType]}
+      </span>
+
+      <div className="stat-row">
+        <span className="stat-label">Steps Taken</span>
+        <span className="stat-value">{steps}</span>
       </div>
 
-      <div className="stats-item">
-        <span>Steps Taken:</span>
-        <span className="stats-value">{steps}</span>
+      <div className="stat-row">
+        <span className="stat-label">Cells Explored</span>
+        <span className="stat-value">{exploredCount}</span>
       </div>
 
-      <div className="stats-item">
-        <span>Cells Explored:</span>
-        <span className="stats-value">{exploredCount}</span>
+      <div className="stat-row">
+        <span className="stat-label">Memory (bytes)</span>
+        <span className="stat-value">{memorySize > 2 ? memorySize : 0}</span>
       </div>
 
-      <div className="stats-item">
-        <span>Memory Entries (localStorage size):</span>
-        <span className="stats-value">{agentType === 'reflex' ? 0 : memorySize} bytes</span>
+      <div>
+        <div className="stat-label" style={{ marginBottom: 4 }}>Coins Collected</div>
+        {coinsCollected.length === 0
+          ? <span style={{ fontSize: '0.78rem', opacity: 0.5 }}>None yet</span>
+          : <div className="coins-list">
+              {coinsCollected.map((c, i) => (
+                <span key={i} className="coin-tag">+{c.value}</span>
+              ))}
+            </div>
+        }
       </div>
 
-      <div className="stats-item">
-        <span>Coins Collected:</span>
-        <span className="stats-value">{coinsCollected.length}</span>
-      </div>
-
-      {coinsCollected.length > 0 && (
-        <div style={{ fontSize: '0.8rem', color: '#666', marginTop: '-5px' }}>
-          Values: {coinsCollected.map(c => c.value).join(', ')}
-        </div>
-      )}
-
-      <div className="stats-item" style={{ marginTop: '15px', borderTop: '2px solid #eee', paddingTop: '10px' }}>
-        <span style={{ fontWeight: 'bold' }}>Total Score:</span>
-        <span className="stats-value" style={{ 
-          fontSize: '1.2rem', 
-          color: totalScore < 0 ? '#e74c3c' : '#2ecc71' 
-        }}>
+      <div className="stat-row">
+        <span className="stat-label">Total Score</span>
+        <span
+          className="stat-value"
+          style={{ color: totalScore >= 0 ? '#00b894' : '#e17055' }}
+        >
           {totalScore}
         </span>
       </div>
-      
-      <div style={{ fontSize: '0.8rem', color: '#999', marginTop: '5px', textAlign: 'center' }}>
-        Score = Coins sum - (steps × 5)
-      </div>
+
+      {goalReached && (
+        <div className="goal-banner">🎉 Goal Reached!</div>
+      )}
     </div>
   )
 }

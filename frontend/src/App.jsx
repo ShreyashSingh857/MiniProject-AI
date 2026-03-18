@@ -73,11 +73,13 @@ function App() {
       setAgentPos(res.nextPos);
       saveMemory(res.updatedMemory);
       
-      if (res.exploredCells && res.exploredCells.length > 0) {
+      // Always update exploredCells — model-based agent grows it every step
+      if (res.exploredCells) {
         setExploredCells(res.exploredCells);
       }
-      
-      if (res.pathSoFar && res.pathSoFar.length > 0) {
+
+      // Always update pathSoFar — model-based agent appends every step
+      if (res.pathSoFar) {
         setPathSoFar(res.pathSoFar);
       }
       
@@ -124,27 +126,29 @@ function App() {
 
   const handleScatterCoins = () => {
     const newCoins = [];
+    const gridCopy = grid.map(row => [...row]);
+
     for (let i = 0; i < 5; i++) {
-      let cx, cy;
+      let cx, cy, attempts = 0;
       do {
         cx = Math.floor(Math.random() * GRID_SIZE);
         cy = Math.floor(Math.random() * GRID_SIZE);
-      } while (grid[cy][cx] === 1 || (cx === startPos.x && cy === startPos.y) || (cx === goalPos.x && cy === goalPos.y));
-      
-      newCoins.push({
-        x: cx,
-        y: cy,
-        value: Math.floor(Math.random() * 41) + 10 // 10 to 50
-      });
-      
-      // Update grid for visuals (2 = coin)
-      setGrid(prev => {
-        const newGrid = prev.map(row => [...row]);
-        newGrid[cy][cx] = 2;
-        return newGrid;
-      });
+        attempts++;
+      } while (
+        attempts < 100 &&
+        (gridCopy[cy][cx] !== 0 ||
+          (cx === startPos.x && cy === startPos.y) ||
+          (cx === goalPos.x  && cy === goalPos.y))
+      );
+
+      if (gridCopy[cy][cx] === 0) {
+        newCoins.push({ x: cx, y: cy, value: Math.floor(Math.random() * 41) + 10 });
+        gridCopy[cy][cx] = 2;
+      }
     }
+
     setCoins(prev => [...prev, ...newCoins]);
+    setGrid(gridCopy);   // Single setGrid call — fixes the batching bug
   };
 
   const handleRandomWalls = () => {

@@ -1,58 +1,70 @@
 import React from 'react'
 
-export default function ControlPanel({ 
-  agentType, onAgentChange, onPlay, onPause, onReset, 
-  onScatterCoins, onRandomizeWalls, speed, onSpeedChange, 
+export default function ControlPanel({
+  agentType, onAgentChange,
+  onPlay, onPause, onReset,
+  onScatterCoins, onRandomizeWalls,
+  speed, onSpeedChange,
   isRunning, onClearMemory
 }) {
+  const agents = [
+    { id: 'reflex',  label: '🔴 Simple Reflex',  desc: 'No memory, random walk' },
+    { id: 'model',   label: '🟡 Model-Based',     desc: 'Remembers full path history' },
+    { id: 'goal',    label: '🟢 Goal-Based',      desc: 'BFS shortest path' },
+    { id: 'utility', label: '🔵 Utility-Based',   desc: 'A* with coin rewards' },
+  ]
+
   return (
-    <div className="panel control-panel">
-      <h2>Controls</h2>
-      
-      <div className="control-group">
-        <label>Agent Type:</label>
-        <button 
-          className={agentType === 'reflex' ? 'active' : ''} 
-          onClick={() => onAgentChange('reflex')}
-        >Reflex</button>
-        <button 
-          className={agentType === 'model' ? 'active' : ''} 
-          onClick={() => onAgentChange('model')}
-        >Model-Based</button>
-        <button 
-          className={agentType === 'goal' ? 'active' : ''} 
-          onClick={() => onAgentChange('goal')}
-        >Goal-Based</button>
-        <button 
-          className={agentType === 'utility' ? 'active' : ''} 
-          onClick={() => onAgentChange('utility')}
-        >Utility-Based</button>
+    <div className="control-panel">
+      <h3>Agent Type</h3>
+      <div className="agent-buttons">
+        {agents.map(a => (
+          <button
+            key={a.id}
+            className={`agent-btn ${agentType === a.id ? 'active' : ''}`}
+            onClick={() => onAgentChange(a.id)}
+          >
+            {a.label}
+          </button>
+        ))}
       </div>
 
-      <div className="control-group" style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: '10px' }}>
-        <button className="primary" onClick={onPlay} disabled={isRunning}>Play</button>
-        <button onClick={onPause} disabled={!isRunning}>Pause</button>
-        <button onClick={onReset}>Reset</button>
+      <div>
+        <h3>Controls</h3>
+        <div className="action-buttons">
+          {!isRunning
+            ? <button className="btn btn-play"  onClick={onPlay}>▶ Play</button>
+            : <button className="btn btn-pause" onClick={onPause}>⏸ Pause</button>
+          }
+          <button className="btn btn-reset" onClick={onReset}>↺ Reset</button>
+        </div>
       </div>
 
-      <div className="control-group" style={{ marginTop: '10px' }}>
-        <button onClick={onScatterCoins}>Scatter Coins</button>
-        <button onClick={onRandomizeWalls}>Random Walls</button>
-      </div>
-
-      <div className="speed-control" style={{ marginTop: '10px' }}>
-        <label>Speed: {speed}</label>
-        <input 
-          type="range" 
-          min="1" 
-          max="10" 
-          value={speed} 
-          onChange={e => onSpeedChange(Number(e.target.value))} 
+      <div className="speed-section">
+        <h3>Speed</h3>
+        <label>
+          <span>Slow</span><span>Fast</span>
+        </label>
+        <input
+          type="range"
+          min={1}
+          max={10}
+          value={speed}
+          onChange={e => onSpeedChange(Number(e.target.value))}
         />
       </div>
 
-      <div className="control-group" style={{ marginTop: 'auto', paddingTop: '10px' }}>
-        <button className="danger" onClick={onClearMemory}>Clear Memory</button>
+      <div>
+        <h3>Environment</h3>
+        <button className="btn btn-secondary" onClick={onScatterCoins} style={{marginBottom: 6}}>
+          ⭐ Scatter Coins
+        </button>
+        <button className="btn btn-secondary" onClick={onRandomizeWalls} style={{marginBottom: 6}}>
+          🧱 Random Walls
+        </button>
+        <button className="btn btn-secondary" onClick={onClearMemory}>
+          🧠 Clear Memory
+        </button>
       </div>
     </div>
   )

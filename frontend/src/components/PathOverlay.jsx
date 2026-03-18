@@ -1,39 +1,41 @@
 import React from 'react'
 
+const CELL = 40;
+
 export default function PathOverlay({ exploredCells, pathSoFar, gridSize }) {
-  // SVG overlay for Grid
-  // Grid size = variable (15), Cell size = 40px
-  const svgWidth = gridSize * 40;
-  const svgHeight = gridSize * 40;
+  const totalSize = gridSize * CELL;
 
   return (
-    <svg 
-      className="path-overlay" 
-      width={svgWidth} 
-      height={svgHeight} 
-      viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+    <svg
+      className="path-overlay"
+      width={totalSize}
+      height={totalSize}
+      viewBox={`0 0 ${totalSize} ${totalSize}`}
     >
-      {/* 1. Explored Cells - Semi-transparent light blue squares */}
-      {exploredCells && exploredCells.map((cell, idx) => (
-        <rect 
-          key={`exp-${idx}`}
-          x={cell.x * 40}
-          y={cell.y * 40}
-          width={40}
-          height={40}
-          fill="rgba(52, 152, 219, 0.3)"
+      {/* Explored cells — light blue fill */}
+      {exploredCells.map((cell, i) => (
+        <rect
+          key={`exp-${i}`}
+          x={cell.x * CELL}
+          y={cell.y * CELL}
+          width={CELL}
+          height={CELL}
+          fill="rgba(116, 185, 255, 0.2)"
+          stroke="none"
         />
       ))}
 
-      {/* 2. Path So Far - Orange line */}
-      {pathSoFar && pathSoFar.length > 1 && (
-        <polyline 
-          points={pathSoFar.map(p => `${(p.x * 40) + 20},${(p.y * 40) + 20}`).join(' ')}
+      {/* Full path trail — orange polyline connecting every step taken */}
+      {pathSoFar.length > 1 && (
+        <polyline
+          points={pathSoFar
+            .map(p => `${p.x * CELL + CELL / 2},${p.y * CELL + CELL / 2}`)
+            .join(' ')}
           fill="none"
-          stroke="rgba(230, 126, 34, 0.8)"
-          strokeWidth="4"
-          strokeLinejoin="round"
+          stroke="rgba(253, 203, 110, 0.8)"
+          strokeWidth={3}
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
       )}
     </svg>
