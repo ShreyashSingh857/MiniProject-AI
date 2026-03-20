@@ -112,16 +112,26 @@ function App() {
     clearMemory();
   };
 
-  const handleCellClick = ({x, y}) => {
-    // Don't modify start or goal
+  const handleCellClick = ({ x, y, forceTo }) => {
     if ((x === startPos.x && y === startPos.y) || (x === goalPos.x && y === goalPos.y)) return;
-    
-    // Toggle wall
+
     setGrid(prev => {
       const newGrid = prev.map(row => [...row]);
-      newGrid[y][x] = newGrid[y][x] === 1 ? 0 : 1;
+      if (forceTo !== undefined) {
+        if (newGrid[y][x] !== 2) {
+          newGrid[y][x] = forceTo;
+        }
+      } else {
+        if (newGrid[y][x] !== 2) {
+          newGrid[y][x] = newGrid[y][x] === 1 ? 0 : 1;
+        }
+      }
       return newGrid;
     });
+
+    if (forceTo === 1 || forceTo === undefined) {
+      setCoins(prev => prev.filter(c => !(c.x === x && c.y === y)));
+    }
   };
 
   const handleScatterCoins = () => {
@@ -211,6 +221,7 @@ function App() {
           />
           <PathOverlay exploredCells={exploredCells} pathSoFar={pathSoFar} gridSize={GRID_SIZE} />
           <Agent position={agentPos} agentType={agentType} />
+          <div className="grid-hint">✏️ Click or drag cells to draw / erase walls</div>
         </div>
 
         <StatsPanel 
