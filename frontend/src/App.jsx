@@ -184,7 +184,7 @@ function App() {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Smart Path Finder</h1>
+        <h1>Different Types of Agents Behaviour</h1>
       </header>
 
       <div className="main-content">
