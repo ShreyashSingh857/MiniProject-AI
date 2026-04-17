@@ -18,31 +18,56 @@ function reflexAgent(grid, currentPos, goalPos, memory) {
   const cols = grid[0].length;
   const rows = grid.length;
 
-  const getWalkableNeighbors = (x, y) => {
-    return directions
-      .map(d => ({ x: x + d.x, y: y + d.y, dx: d.x, dy: d.y }))
-      .filter(pos => pos.x >= 0 && pos.x < cols && pos.y >= 0 && pos.y < rows && grid[pos.y][pos.x] !== 1);
+  const isWalkable = (x, y) => {
+    return x >= 0 && x < cols && y >= 0 && y < rows && grid[y][x] !== 1;
   };
 
-  const walkable = getWalkableNeighbors(currentPos.x, currentPos.y);
+  const walkable = directions
+    .map(d => ({ x: currentPos.x + d.x, y: currentPos.y + d.y, dx: d.x, dy: d.y }))
+    .filter(pos => isWalkable(pos.x, pos.y));
 
   if (walkable.length === 0) {
     // Nowhere to go
-    return { nextPos: currentPos, updatedMemory: {}, exploredCells: [currentPos], pathSoFar: [] };
+    return { nextPos: currentPos, updatedMemory: memory, exploredCells: [currentPos], pathSoFar: [] };
   }
 
-  // To know "directly ahead", we'd need memory. But rule says "Has NO memory". So wait...
-  // How do we know the "last direction"? We can't if we don't have memory.
-  // We can just pick a random walkable neighbor each time if the exact instruction is "Return empty memory".
-  // Let's pick a random walkable neighbor.
-  const randomIndex = Math.floor(Math.random() * walkable.length);
-  const chosen = walkable[randomIndex];
+  let chosen = null;
+
+  // Try to move forward in the last direction if possible
+  if (memory && memory.lastDirection) {
+    const fwdX = currentPos.x + memory.lastDirection.dx;
+    const fwdY = currentPos.y + memory.lastDirection.dy;
+    
+    if (isWalkable(fwdX, fwdY)) {
+      chosen = { x: fwdX, y: fwdY, dx: memory.lastDirection.dx, dy: memory.lastDirection.dy };
+    }
+  }
+
+  // If hitting a wall or starting out, pick a new direction
+  if (!chosen) {
+    let options = walkable;
+    
+    // If we were moving, prefer not to bounce straight back unless it's a dead end
+    if (memory && memory.lastDirection) {
+      const revDx = -memory.lastDirection.dx;
+      const revDy = -memory.lastDirection.dy;
+      const withoutReverse = walkable.filter(p => !(p.dx === revDx && p.dy === revDy));
+      if (withoutReverse.length > 0) {
+        options = withoutReverse;
+      }
+    }
+    
+    const randomIndex = Math.floor(Math.random() * options.length);
+    chosen = options[randomIndex];
+  }
 
   const nextPos = { x: chosen.x, y: chosen.y };
+  
+  const updatedMemory = { ...memory, lastDirection: { dx: chosen.dx, dy: chosen.dy } };
 
   return {
     nextPos,
-    updatedMemory: {},
+    updatedMemory,
     exploredCells: [currentPos],
     pathSoFar: [currentPos, nextPos]
   };

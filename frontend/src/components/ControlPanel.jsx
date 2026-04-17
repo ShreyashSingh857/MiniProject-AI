@@ -5,7 +5,7 @@ export default function ControlPanel({
   onPlay, onPause, onReset,
   onScatterCoins, onRandomizeWalls,
   speed, onSpeedChange,
-  isRunning, onClearMemory
+  isRunning
 }) {
   const agents = [
     { id: 'reflex',  label: '🔴 Simple Reflex',  desc: 'No memory, random walk' },
@@ -61,9 +61,6 @@ export default function ControlPanel({
         </button>
         <button className="btn btn-secondary" onClick={onRandomizeWalls} style={{marginBottom: 6}}>
           🧱 Random Walls
-        </button>
-        <button className="btn btn-secondary" onClick={onClearMemory}>
-          🧠 Clear Memory
         </button>
       </div>
     </div>

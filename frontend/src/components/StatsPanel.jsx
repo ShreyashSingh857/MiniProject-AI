@@ -2,7 +2,7 @@ import React from 'react'
 
 export default function StatsPanel({
   steps, exploredCount, coinsCollected,
-  totalScore, memorySize, agentType, goalReached
+  agentType, goalReached
 }) {
   const badgeClass = {
     reflex:  'badge-reflex',
@@ -18,6 +18,11 @@ export default function StatsPanel({
     utility: 'Utility-Based'
   }
 
+  const agentAlgorithm = {
+    goal:    'Breadth-First Search (BFS)',
+    utility: 'A* Search (A-Star)'
+  }
+
   return (
     <div className="stats-panel">
       <h3>Stats</h3>
@@ -25,6 +30,13 @@ export default function StatsPanel({
       <span className={`agent-badge ${badgeClass[agentType]}`}>
         {agentLabel[agentType]}
       </span>
+
+      {agentAlgorithm[agentType] && (
+        <div className="stat-row" style={{ marginTop: 12 }}>
+          <span className="stat-label">Algorithm</span>
+          <span className="stat-value" style={{ fontSize: '0.85rem' }}>{agentAlgorithm[agentType]}</span>
+        </div>
+      )}
 
       <div className="stat-row">
         <span className="stat-label">Steps Taken</span>
@@ -36,10 +48,6 @@ export default function StatsPanel({
         <span className="stat-value">{exploredCount}</span>
       </div>
 
-      <div className="stat-row">
-        <span className="stat-label">Memory (bytes)</span>
-        <span className="stat-value">{memorySize > 2 ? memorySize : 0}</span>
-      </div>
 
       <div>
         <div className="stat-label" style={{ marginBottom: 4 }}>Coins Collected</div>
@@ -53,15 +61,6 @@ export default function StatsPanel({
         }
       </div>
 
-      <div className="stat-row">
-        <span className="stat-label">Total Score</span>
-        <span
-          className="stat-value"
-          style={{ color: totalScore >= 0 ? '#00b894' : '#e17055' }}
-        >
-          {totalScore}
-        </span>
-      </div>
 
       {goalReached && (
         <div className="goal-banner">🎉 Goal Reached!</div>

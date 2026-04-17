@@ -1,9 +1,9 @@
 function modelAgent(grid, currentPos, goalPos, memory) {
   const directions = [
-    { x: 0, y: -1 },
-    { x: 0, y: 1 },
-    { x: -1, y: 0 },
-    { x: 1, y: 0 }
+    { x: 0, y: -1 }, // up
+    { x: 0, y: 1 },  // down
+    { x: -1, y: 0 }, // left
+    { x: 1, y: 0 }   // right
   ];
 
   const cols = grid[0].length;
@@ -12,62 +12,69 @@ function modelAgent(grid, currentPos, goalPos, memory) {
   // Initialize memory structure
   let mem = memory || {};
   if (!mem.visited) mem.visited = {};
-  if (!mem.path) mem.path = [];
+  if (!mem.pathStack) mem.pathStack = [];
+  if (!mem.exploredList) mem.exploredList = [];
+
+  const isWalkable = (x, y) => {
+    return x >= 0 && x < cols && y >= 0 && y < rows && grid[y][x] !== 1;
+  };
 
   // Mark current position as visited
   const currentKey = `${currentPos.x},${currentPos.y}`;
   mem.visited[currentKey] = true;
-
-  // Append current position to the running path history
-  // Only append if it's a new position (avoid duplicates on first call)
-  const lastInPath = mem.path[mem.path.length - 1];
-  if (!lastInPath || lastInPath.x !== currentPos.x || lastInPath.y !== currentPos.y) {
-    mem.path.push({ x: currentPos.x, y: currentPos.y });
+  
+  // Add to explored list for the UI
+  const lastExplored = mem.exploredList[mem.exploredList.length - 1];
+  if (!lastExplored || lastExplored.x !== currentPos.x || lastExplored.y !== currentPos.y) {
+    mem.exploredList.push({ x: currentPos.x, y: currentPos.y });
   }
 
-  const getWalkableNeighbors = (x, y) => {
-    return directions
-      .map(d => ({ x: x + d.x, y: y + d.y }))
-      .filter(pos =>
-        pos.x >= 0 && pos.x < cols &&
-        pos.y >= 0 && pos.y < rows &&
-        grid[pos.y][pos.x] !== 1
-      );
-  };
-
-  const manhattan = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-
-  const walkable = getWalkableNeighbors(currentPos.x, currentPos.y);
-
-  if (walkable.length === 0) {
-    return {
-      nextPos: currentPos,
-      updatedMemory: mem,
-      exploredCells: Object.keys(mem.visited).map(k => {
-        const [x, y] = k.split(',');
-        return { x: +x, y: +y };
-      }),
-      pathSoFar: mem.path
-    };
+  // Manage stack: if current position isn't at the top (e.g. newly visited), push it
+  const top = mem.pathStack.length > 0 ? mem.pathStack[mem.pathStack.length - 1] : null;
+  if (!top || top.x !== currentPos.x || top.y !== currentPos.y) {
+    mem.pathStack.push({ x: currentPos.x, y: currentPos.y });
   }
 
+  // Get all walkable neighbors
+  const walkable = directions
+    .map(d => ({ x: currentPos.x + d.x, y: currentPos.y + d.y, dx: d.x, dy: d.y }))
+    .filter(pos => isWalkable(pos.x, pos.y));
+
+  // Find unvisited walkable neighbors
   const unvisited = walkable.filter(pos => !mem.visited[`${pos.x},${pos.y}`]);
 
-  let chosenPos;
-  if (unvisited.length > 0) {
-    // Prefer unvisited cells — explore the world greedily
-    // Among unvisited, pick the one closest to the goal
-    // This is the "model" in action: using known goal location to guide exploration
-    unvisited.sort((a, b) => manhattan(a, goalPos) - manhattan(b, goalPos));
-    chosenPos = unvisited[0];
-  } else {
-    // All neighbors visited — use model knowledge to backtrack toward goal
-    // This is smarter than random: the agent uses its internal world model
-    walkable.sort((a, b) => manhattan(a, goalPos) - manhattan(b, goalPos));
-    chosenPos = walkable[0];
-  }
+  let chosen = null;
 
-  const nextPos = { x: chosenPos.x, y: chosenPos.y };
+  if (unvisited.length > 0) {
+    // 1. "Behave like reflex agent" - try to keep last direction if possible
+    if (mem.lastDirection) {
+      const fwd = unvisited.find(p => p.dx === mem.lastDirection.dx && p.dy === mem.lastDirection.dy);
+      if (fwd) {
+        chosen = fwd;
+      }
+    }
+    
+    // 2. If blocked or starting out but unvisited paths exist, pick a new valid direction
+    if (!chosen) {
+      const randomIndex = Math.floor(Math.random() * unvisited.length);
+      chosen = unvisited[randomIndex];
+    }
+    
+    // Update direction based on chosen move
+    mem.lastDirection = { dx: chosen.dx, dy: chosen.dy };
+  } else {
+    // 3. STUCK - Backtrack!
+    // No unvisited neighbors. Pop the current cell and go back to the previous one.
+    if (mem.pathStack.length > 1) {
+      mem.pathStack.pop(); // Remove current cell
+      const prev = mem.pathStack[mem.pathStack.length - 1]; // Peek at previous cell
+      chosen = { x: prev.x, y: prev.y };
+      mem.lastDirection = null; // Clear so it will choose a new direction at the crossroad
+    } else {
+      // Stack is empty or 1 node, nowhere to go. Stay here.
+      chosen = currentPos;
+    }
+  }
 
   const exploredCells = Object.keys(mem.visited).map(k => {
     const [x, y] = k.split(',');
@@ -75,10 +82,10 @@ function modelAgent(grid, currentPos, goalPos, memory) {
   });
 
   return {
-    nextPos,
+    nextPos: { x: chosen.x, y: chosen.y },
     updatedMemory: mem,
-    exploredCells,
-    pathSoFar: mem.path   // Return FULL path history, not just last 2 nodes
+    exploredCells: exploredCells,
+    pathSoFar: mem.pathStack // The pathStack visually represents the current actual path remaining
   };
 }
 

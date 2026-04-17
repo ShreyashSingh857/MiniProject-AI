@@ -5,7 +5,7 @@ import StatsPanel from './components/StatsPanel'
 import PathOverlay from './components/PathOverlay'
 import Agent from './components/Agent'
 import { callAgentMove } from './services/agentApi'
-import { useAgentMemory } from './hooks/useAgentMemory'
+
 import './App.css'
 
 function App() {
@@ -30,8 +30,7 @@ function App() {
   const [steps, setSteps] = useState(0);
   const [goalReached, setGoalReached] = useState(false);
 
-  const { memory, saveMemory, clearMemory } = useAgentMemory(agentType);
-
+  const [memory, setMemory] = useState({});
   const timerRef = useRef(null);
 
   // Stop interval when unmounting or goal reached
@@ -71,7 +70,7 @@ function App() {
     const res = await callAgentMove(payload);
     if (res) {
       setAgentPos(res.nextPos);
-      saveMemory(res.updatedMemory);
+      setMemory(res.updatedMemory);
       
       // Always update exploredCells — model-based agent grows it every step
       if (res.exploredCells) {
@@ -109,7 +108,7 @@ function App() {
     setPathSoFar([]);
     setSteps(0);
     setGoalReached(false);
-    clearMemory();
+    setMemory({});
   };
 
   const handleCellClick = ({ x, y, forceTo }) => {
@@ -179,18 +178,13 @@ function App() {
     setGrid(newGrid);
   };
 
-  const memorySize = JSON.stringify(memory).length;
   // coins collected calculation
   const collectedCoins = memory?.collectedCoins || [];
-  const totalSteps = steps;
-  let coinSum = 0;
-  collectedCoins.forEach(c => coinSum += c.value);
-  const totalScore = coinSum - (totalSteps * 5);
 
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>FindTheWay — AI Agent Pathfinding Simulation</h1>
+        <h1>Smart Path Finder</h1>
       </header>
 
       <div className="main-content">
@@ -205,7 +199,7 @@ function App() {
           speed={speed}
           onSpeedChange={(val) => setSpeed(val)}
           isRunning={isRunning}
-          onClearMemory={clearMemory}
+
         />
 
         <div className="grid-wrapper">
@@ -228,8 +222,6 @@ function App() {
           steps={steps}
           exploredCount={exploredCells.length}
           coinsCollected={collectedCoins}
-          totalScore={totalScore}
-          memorySize={memorySize}
           agentType={agentType}
           goalReached={goalReached}
         />
